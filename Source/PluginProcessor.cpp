@@ -8,6 +8,10 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "juce_audio_processors/juce_audio_processors.h"
+#include "juce_audio_processors_headless/juce_audio_processors_headless.h"
+#include "juce_core/juce_core.h"
+#include <memory>
 
 //==============================================================================
 SimpleEQAudioProcessor::SimpleEQAudioProcessor()
@@ -166,7 +170,8 @@ bool SimpleEQAudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SimpleEQAudioProcessor::createEditor()
 {
-    return new SimpleEQAudioProcessorEditor (*this);
+    //return new SimpleEQAudioProcessorEditor (*this);
+    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -175,6 +180,31 @@ void SimpleEQAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::createParameterLayout()
+{
+  juce::AudioProcessorValueTreeState::ParameterLayout layout;
+  layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Freq", "LowCut Freq", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20.f));
+
+  layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Freq", "HighCut Freq", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 20000.f));
+
+  layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Gain", "Peak Gain", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 0.f));
+
+  layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Quality", "Peak Quality", juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 1.f), 1.f));
+  
+  juce::StringArray stringArray;
+  for (int i = 0; i < 4; ++i)
+  {
+    juce::String str;
+    str << (12 + i*12); // 12 is the notes in a scale i think
+    str << " db/Oct";
+    stringArray.add(str);
+  }
+  layout.add(std::make_unique<juce::AudioParameterChoice>("Low Cut Slope", "LowCut Slope", stringArray, 0));
+  layout.add(std::make_unique<juce::AudioParameterChoice>("HighCut Slope", "HighCut Slope", stringArray, 0));
+
+  return layout;
 }
 
 void SimpleEQAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
